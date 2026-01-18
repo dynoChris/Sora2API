@@ -4,7 +4,7 @@ import {
   onAuthReady,
   registerWithEmail,
   signInWithEmail,
-} from "./firebase.js?v=20250119";
+} from "./firebase.js?v=20250120";
 
 const form = document.querySelector("#auth-form");
 const statusEl = document.querySelector("#auth-status");
@@ -19,6 +19,7 @@ const passwordHelp = document.querySelector("#password-help");
 
 let authReady = false;
 let mode = "register";
+let redirectScheduled = false;
 
 const safeLogEvent = (name, meta) => {
   logEvent(name, meta).catch(() => {});
@@ -39,6 +40,16 @@ const showContinue = () => {
   if (continueBtn) {
     continueBtn.classList.remove("hidden");
   }
+};
+
+const redirectToPlayground = () => {
+  if (redirectScheduled) {
+    return;
+  }
+  redirectScheduled = true;
+  setTimeout(() => {
+    window.location.href = "index.html";
+  }, 400);
 };
 
 const setDisabled = (disabled) => {
@@ -170,9 +181,10 @@ onAuthReady((user) => {
   safeLogEvent("auth_view", { mode });
 
   if (user && !user.isAnonymous) {
-    setStatus("You are already signed in.", "success");
+    setStatus("You are already signed in. Redirecting...", "success");
     showContinue();
     setDisabled(true);
+    redirectToPlayground();
     return;
   }
 
@@ -224,13 +236,14 @@ if (form) {
       if (mode === "login") {
         await signInWithEmail(email, password);
         safeLogEvent("auth_success", { mode });
-        setStatus("Signed in successfully. You can run generation now.", "success");
+        setStatus("Signed in successfully. Redirecting...", "success");
       } else {
         await registerWithEmail(email, password);
         safeLogEvent("auth_success", { mode });
-        setStatus("Account created. You can run generation now.", "success");
+        setStatus("Account created. Redirecting...", "success");
       }
       showContinue();
+      redirectToPlayground();
     } catch (error) {
       safeLogEvent("auth_error", { mode, code: error.code || "unknown" });
       setStatus(normalizeError(error, mode), "error");
