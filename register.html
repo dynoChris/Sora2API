@@ -3,26 +3,37 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Create account</title>
+    <title>Account access</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Sora:wght@400;500;600;700&family=Source+Code+Pro:wght@400;500&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="styles.css?v=20250118" />
+    <link rel="stylesheet" href="styles.css?v=20250119" />
   </head>
   <body class="auth-body">
     <div class="page auth-page">
-      <a class="back-link" href="index.html">← Back to Playground</a>
+      <a class="back-link" href="index.html">&lt;- Back to Playground</a>
       <div class="card auth-card">
-        <h1>Create your account</h1>
-        <p>
-          Register to run generations, save history, and unlock upcoming
-          features.
-        </p>
+        <div class="auth-header">
+          <h1 id="auth-title">Create your account</h1>
+          <p id="auth-subtitle">
+            Register to run generations, save history, and unlock upcoming
+            features.
+          </p>
+        </div>
 
-        <form id="register-form" class="auth-form">
+        <div class="segmented auth-toggle" data-auth-toggle>
+          <button class="seg active" type="button" data-auth-mode="register">
+            Register
+          </button>
+          <button class="seg" type="button" data-auth-mode="login">
+            Sign in
+          </button>
+        </div>
+
+        <form id="auth-form" class="auth-form" data-auth-mode="register">
           <label for="reg-email">Email</label>
           <input
             id="reg-email"
@@ -41,14 +52,9 @@
             minlength="6"
             required
           />
-          <p class="help">Use 6 or more characters.</p>
+          <p id="password-help" class="help">Use 6 or more characters.</p>
 
-          <button
-            class="btn primary"
-            id="register-submit"
-            type="submit"
-            disabled
-          >
+          <button class="btn primary" id="auth-submit" type="submit" disabled>
             Create account
           </button>
         </form>
@@ -63,13 +69,13 @@
           </button>
         </div>
 
-        <p id="register-status" class="auth-status"></p>
+        <p id="auth-status" class="auth-status"></p>
         <button id="continue-btn" class="btn outline hidden" type="button">
           Go to Playground
         </button>
       </div>
     </div>
 
-    <script type="module" src="register.js?v=20250118"></script>
+    <script type="module" src="register.js?v=20250119"></script>
   </body>
 </html>

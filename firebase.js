@@ -5,6 +5,7 @@ import {
   linkWithCredential,
   onAuthStateChanged,
   signInAnonymously,
+  signInWithEmailAndPassword,
 } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-auth.js";
 import {
   getDatabase,
@@ -230,8 +231,33 @@ const registerWithEmail = async (email, password) => {
   return user;
 };
 
+const signInWithEmail = async (email, password) => {
+  const result = await signInWithEmailAndPassword(auth, email, password);
+  const user = result.user;
+  await ensureUserRecord(user);
+
+  const now = Date.now();
+  await update(ref(db, `users/${user.uid}`), {
+    status: "registered",
+    email: user.email || email,
+    last_login_at: now,
+    last_login_at_local: formatUtcPlus2(new Date(now)),
+  });
+
+  currentUser = user;
+  userRecordReady = true;
+  return user;
+};
+
 const getCurrentUser = () => currentUser;
 
 const waitForAuth = () => authReadyPromise;
 
-export { getCurrentUser, logEvent, onAuthReady, registerWithEmail, waitForAuth };
+export {
+  getCurrentUser,
+  logEvent,
+  onAuthReady,
+  registerWithEmail,
+  signInWithEmail,
+  waitForAuth,
+};

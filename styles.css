@@ -101,6 +101,15 @@ body::after {
   line-height: 1.6;
 }
 
+.auth-header {
+  margin-bottom: 12px;
+}
+
+.auth-toggle {
+  margin-bottom: 16px;
+  align-self: flex-start;
+}
+
 .auth-form {
   display: flex;
   flex-direction: column;
