@@ -1015,6 +1015,13 @@ body::after {
   border-radius: 12px;
   border: 1px solid var(--border);
   background: var(--surface-soft);
+  cursor: pointer;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.history-item.selected {
+  border-color: rgba(43, 109, 246, 0.45);
+  box-shadow: 0 10px 18px rgba(43, 109, 246, 0.12);
 }
 
 .history-thumb {
@@ -1053,6 +1060,12 @@ body::after {
   flex-wrap: wrap;
 }
 
+.history-meta-right {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .history-status {
   display: inline-flex;
   align-items: center;
@@ -1066,6 +1079,16 @@ body::after {
   height: 8px;
   border-radius: 50%;
   background: #28c76f;
+}
+
+.history-download {
+  width: 32px;
+  height: 32px;
+}
+
+.history-download .icon {
+  width: 16px;
+  height: 16px;
 }
 
 .tab-panels {

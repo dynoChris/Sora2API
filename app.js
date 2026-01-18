@@ -1,12 +1,13 @@
 import {
   getCurrentUser,
   getIdToken,
+  getUserVideos,
   logEvent,
   onAuthReady,
   saveGeneratedVideo,
   signOutUser,
   waitForAuth,
-} from "./firebase.js?v=20260119";
+} from "./firebase.js?v=20260120";
 
 const toggleGroups = document.querySelectorAll("[data-toggle-group]");
 const mainTabGroup = document.querySelector(
@@ -28,6 +29,7 @@ const progressTime = document.querySelector("#progress-time");
 const progressNote = document.querySelector("#progress-note");
 const historyList = document.querySelector("#video-history");
 const historyCount = document.querySelector("#history-count");
+const mainDownloadButton = document.querySelector('[data-action="download-main"]');
 const profileButton = document.querySelector("[data-profile-btn]");
 const profileMenu = document.querySelector("[data-profile-menu]");
 const profileEmail = document.querySelector("[data-profile-email]");
@@ -43,6 +45,17 @@ let generationInFlight = false;
 const API_BASE = "https://us-central1-sora2api-9feeb.cloudfunctions.net";
 const CREATE_ENDPOINT = `${API_BASE}/createSoraTask`;
 const QUERY_ENDPOINT = `${API_BASE}/getSoraTask`;
+
+const DEMO_VIDEO = {
+  url: "video_demo1.mp4",
+  elapsed_seconds: 176.888,
+  status: "complete",
+  label: "Generated video",
+  is_demo: true,
+};
+
+let currentVideoUrl = videoPlayer ? videoPlayer.getAttribute("src") || "" : "";
+let historyItems = [];
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -173,30 +186,63 @@ const resetProgress = () => {
   setProgressValues(0, progressEstimate, "Waiting for generation...");
 };
 
-const updateHistoryCount = () => {
-  if (!historyCount || !historyList) {
+const updateHistoryCount = (total) => {
+  if (!historyCount) {
     return;
   }
-  const total = historyList.querySelectorAll(".history-item").length;
   historyCount.textContent = String(total);
 };
 
-const addHistoryItem = (url, elapsedSeconds) => {
-  if (!historyList) {
+const getFilenameFromUrl = (url) => {
+  try {
+    const parsed = new URL(url, window.location.href);
+    const name = parsed.pathname.split("/").pop() || "video.mp4";
+    return name.includes(".") ? name : "video.mp4";
+  } catch (error) {
+    return "video.mp4";
+  }
+};
+
+const downloadVideo = (url) => {
+  if (!url) {
     return;
   }
-  const empty = historyList.querySelector(".history-empty");
-  if (empty) {
-    empty.remove();
-  }
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = getFilenameFromUrl(url);
+  link.rel = "noopener";
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+};
 
+const setActiveVideo = (url) => {
+  if (!url) {
+    return;
+  }
+  currentVideoUrl = url;
+  if (videoPlayer) {
+    if (videoPlayer.src !== url) {
+      videoPlayer.src = url;
+      videoPlayer.load();
+    }
+  }
+  if (historyList) {
+    historyList.querySelectorAll(".history-item").forEach((item) => {
+      item.classList.toggle("selected", item.dataset.videoUrl === url);
+    });
+  }
+};
+
+const buildHistoryItem = (video) => {
   const item = document.createElement("div");
   item.className = "history-item";
+  item.dataset.videoUrl = video.url;
 
   const thumb = document.createElement("div");
   thumb.className = "history-thumb";
   const thumbVideo = document.createElement("video");
-  thumbVideo.src = url;
+  thumbVideo.src = video.url;
   thumbVideo.controls = true;
   thumbVideo.preload = "metadata";
   thumb.appendChild(thumbVideo);
@@ -206,13 +252,19 @@ const addHistoryItem = (url, elapsedSeconds) => {
 
   const title = document.createElement("div");
   title.className = "history-title";
-  title.textContent = "Generated video";
+  title.textContent = video.label || "Generated video";
 
   const meta = document.createElement("div");
   meta.className = "history-meta";
 
   const time = document.createElement("span");
-  time.textContent = `Generated in ${elapsedSeconds.toFixed(3)} seconds`;
+  const elapsed = Number(video.elapsed_seconds);
+  time.textContent = Number.isFinite(elapsed)
+    ? `Generated in ${elapsed.toFixed(3)} seconds`
+    : "Generated video";
+
+  const metaRight = document.createElement("span");
+  metaRight.className = "history-meta-right";
 
   const status = document.createElement("span");
   status.className = "history-status";
@@ -223,15 +275,66 @@ const addHistoryItem = (url, elapsedSeconds) => {
   status.appendChild(dot);
   status.appendChild(statusText);
 
+  const downloadBtn = document.createElement("button");
+  downloadBtn.className = "icon-btn subtle history-download";
+  downloadBtn.type = "button";
+  downloadBtn.dataset.downloadUrl = video.url;
+  downloadBtn.setAttribute("aria-label", "Download");
+  downloadBtn.innerHTML = `<svg viewBox="0 0 24 24" class="icon">
+    <path
+      d="M12 4v10m0 0l-4-4m4 4l4-4M5 20h14"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="1.6"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    />
+  </svg>`;
+
   meta.appendChild(time);
-  meta.appendChild(status);
+  metaRight.appendChild(status);
+  metaRight.appendChild(downloadBtn);
+  meta.appendChild(metaRight);
   info.appendChild(title);
   info.appendChild(meta);
 
   item.appendChild(thumb);
   item.appendChild(info);
-  historyList.prepend(item);
-  updateHistoryCount();
+  return item;
+};
+
+const renderHistoryList = (items) => {
+  if (!historyList) {
+    return;
+  }
+  historyList.innerHTML = "";
+  items.forEach((video) => {
+    historyList.appendChild(buildHistoryItem(video));
+  });
+  updateHistoryCount(items.length);
+  const activeUrl = currentVideoUrl || (items[0] ? items[0].url : "");
+  setActiveVideo(activeUrl);
+};
+
+const normalizeVideos = (videoMap) => {
+  if (!videoMap) {
+    return [];
+  }
+  return Object.entries(videoMap)
+    .map(([key, value]) => ({
+      ...value,
+      key: Number.parseInt(key, 10) || 0,
+      label: "Generated video",
+    }))
+    .filter((item) => item.url)
+    .sort((a, b) => b.key - a.key);
+};
+
+const loadHistory = async () => {
+  const videos = await getUserVideos();
+  const normalized = normalizeVideos(videos);
+  historyItems = [DEMO_VIDEO, ...normalized];
+  renderHistoryList(historyItems);
 };
 
 const closeProfileMenu = () => {
@@ -498,7 +601,21 @@ if (runButton) {
         videoPlayer.src = outputUrl;
         videoPlayer.load();
       }
-      addHistoryItem(outputUrl, elapsedSeconds);
+      const newItem = {
+        url: outputUrl,
+        elapsed_seconds: Number(elapsedSeconds.toFixed(3)),
+        status: "complete",
+        label: "Generated video",
+      };
+      currentVideoUrl = outputUrl;
+      historyItems = [
+        DEMO_VIDEO,
+        newItem,
+        ...historyItems.filter(
+          (item) => !item.is_demo && item.url !== outputUrl
+        ),
+      ];
+      renderHistoryList(historyItems);
       await saveGeneratedVideo({
         url: outputUrl,
         prompt,
@@ -538,6 +655,33 @@ if (watermarkToggle) {
 if (videoPlayer) {
   videoPlayer.addEventListener("play", () => {
     safeLogEvent("video_play");
+  });
+}
+
+if (mainDownloadButton) {
+  mainDownloadButton.addEventListener("click", (event) => {
+    event.preventDefault();
+    const url =
+      currentVideoUrl ||
+      (videoPlayer ? videoPlayer.currentSrc || videoPlayer.src : "");
+    downloadVideo(url);
+  });
+}
+
+if (historyList) {
+  historyList.addEventListener("click", (event) => {
+    const downloadBtn = event.target.closest("[data-download-url]");
+    if (downloadBtn) {
+      event.stopPropagation();
+      downloadVideo(downloadBtn.dataset.downloadUrl);
+      return;
+    }
+
+    const item = event.target.closest(".history-item");
+    if (!item) {
+      return;
+    }
+    setActiveVideo(item.dataset.videoUrl);
   });
 }
 
@@ -585,8 +729,18 @@ document.addEventListener("click", (event) => {
 });
 
 let pageViewLogged = false;
-onAuthReady((user) => {
+let historyLoaded = false;
+onAuthReady(async (user) => {
   updateProfileUI(user);
+  if (!historyLoaded) {
+    historyLoaded = true;
+    try {
+      await loadHistory();
+    } catch (error) {
+      historyItems = [DEMO_VIDEO];
+      renderHistoryList(historyItems);
+    }
+  }
   if (!pageViewLogged) {
     safeLogEvent("page_view", { page: "playground", status: user.isAnonymous });
     pageViewLogged = true;

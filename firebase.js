@@ -207,6 +207,17 @@ const logEvent = async (name, meta = {}) => {
   await writeEvent(currentUser.uid, name, meta);
 };
 
+const getUserVideos = async () => {
+  if (!currentUser) {
+    return null;
+  }
+  const snapshot = await get(ref(db, `users/${currentUser.uid}/videos`));
+  if (!snapshot.exists()) {
+    return null;
+  }
+  return snapshot.val();
+};
+
 const saveGeneratedVideo = async (meta = {}) => {
   if (!currentUser || !userRecordReady) {
     pendingVideos.push(meta);
@@ -315,6 +326,7 @@ export {
   getCurrentUser,
   getIdToken,
   logEvent,
+  getUserVideos,
   onAuthReady,
   registerWithEmail,
   saveGeneratedVideo,

@@ -13,7 +13,7 @@
       href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Sora:wght@400;500;600;700&family=Source+Code+Pro:wght@400;500&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="styles.css?v=20260118" />
+    <link rel="stylesheet" href="styles.css?v=20260120" />
   </head>
   <body>
     <div class="page">
@@ -290,6 +290,7 @@
                       class="icon-btn primary"
                       aria-label="Download"
                       data-event="download_click"
+                      data-action="download-main"
                     >
                       <svg viewBox="0 0 24 24" class="icon">
                         <path
@@ -302,53 +303,15 @@
                         />
                       </svg>
                     </button>
-                    <button class="btn outline" data-event="history_click">
-                      <svg viewBox="0 0 24 24" class="icon">
-                        <path
-                          d="M12 6v6l4 2"
-                          fill="none"
-                          stroke="currentColor"
-                          stroke-width="1.6"
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                        />
-                        <path
-                          d="M6 9a7 7 0 1 1 0 6"
-                          fill="none"
-                          stroke="currentColor"
-                          stroke-width="1.6"
-                          stroke-linecap="round"
-                        />
-                      </svg>
-                      View full history
-                    </button>
                   </div>
 
                   <div class="history-panel">
                     <div class="history-header">
                       <span>Generated videos</span>
-                      <span class="history-count" id="history-count">1</span>
+                      <span class="history-count" id="history-count">0</span>
                     </div>
                     <div class="history-list" id="video-history">
-                      <div class="history-item">
-                        <div class="history-thumb">
-                          <video
-                            src="video_demo1.mp4"
-                            controls
-                            preload="metadata"
-                          ></video>
-                        </div>
-                        <div class="history-info">
-                          <div class="history-title">Generated video</div>
-                          <div class="history-meta">
-                            <span>Generated in 176.888 seconds</span>
-                            <span class="history-status">
-                              <span class="dot"></span>
-                              <span>Complete</span>
-                            </span>
-                          </div>
-                        </div>
-                      </div>
+                      <div class="history-empty">Loading history...</div>
                     </div>
                   </div>
                 </div>
@@ -489,6 +452,6 @@
       </div>
     </div>
 
-    <script type="module" src="app.js?v=20260119"></script>
+    <script type="module" src="app.js?v=20260120"></script>
   </body>
 </html>
