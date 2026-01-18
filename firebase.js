@@ -49,6 +49,7 @@ const db = getDatabase(app);
 let currentUser = null;
 let userRecordReady = false;
 const pendingEvents = [];
+const pendingVideos = [];
 let authReadyResolve = null;
 const authReadyPromise = new Promise((resolve) => {
   authReadyResolve = resolve;
@@ -79,6 +80,7 @@ const ensureUserRecord = async (user) => {
       created_at_local: formatUtcPlus2(new Date(now)),
       email: user.email || null,
       event_counter: 0,
+      video_counter: 0,
     });
     return;
   }
@@ -100,6 +102,15 @@ const incrementEventCounter = async (uid) => {
   const result = await runTransaction(counterRef, (current) => (current || 0) + 1);
   if (!result.committed) {
     throw new Error("Event counter update failed");
+  }
+  return result.snapshot.val();
+};
+
+const incrementVideoCounter = async (uid) => {
+  const counterRef = ref(db, `users/${uid}/video_counter`);
+  const result = await runTransaction(counterRef, (current) => (current || 0) + 1);
+  if (!result.committed) {
+    throw new Error("Video counter update failed");
   }
   return result.snapshot.val();
 };
@@ -155,6 +166,17 @@ const writeEvent = async (uid, name, meta) => {
   await set(ref(db, `users/${uid}/events/${count}`), payload);
 };
 
+const writeVideo = async (uid, meta) => {
+  const count = await incrementVideoCounter(uid);
+  const now = new Date();
+  const payload = {
+    timestamp: now.getTime(),
+    time_utc_plus_2: formatUtcPlus2(now),
+    ...meta,
+  };
+  await set(ref(db, `users/${uid}/videos/${count}`), payload);
+};
+
 const flushPendingEvents = async () => {
   if (!currentUser || !userRecordReady || pendingEvents.length === 0) {
     return;
@@ -166,12 +188,31 @@ const flushPendingEvents = async () => {
   }
 };
 
+const flushPendingVideos = async () => {
+  if (!currentUser || !userRecordReady || pendingVideos.length === 0) {
+    return;
+  }
+
+  const queue = pendingVideos.splice(0, pendingVideos.length);
+  for (const item of queue) {
+    await writeVideo(currentUser.uid, item);
+  }
+};
+
 const logEvent = async (name, meta = {}) => {
   if (!currentUser || !userRecordReady) {
     pendingEvents.push({ name, meta });
     return;
   }
   await writeEvent(currentUser.uid, name, meta);
+};
+
+const saveGeneratedVideo = async (meta = {}) => {
+  if (!currentUser || !userRecordReady) {
+    pendingVideos.push(meta);
+    return;
+  }
+  await writeVideo(currentUser.uid, meta);
 };
 
 const onAuthReady = (callback) => {
@@ -192,6 +233,7 @@ const onAuthReady = (callback) => {
       await migrateEventKeys(user.uid);
       userRecordReady = true;
       await flushPendingEvents();
+      await flushPendingVideos();
     } catch (error) {
       console.error("Firebase user record init failed", error);
     }
@@ -229,6 +271,7 @@ const registerWithEmail = async (email, password) => {
 
   currentUser = user;
   userRecordReady = true;
+  await flushPendingVideos();
   return user;
 };
 
@@ -247,6 +290,7 @@ const signInWithEmail = async (email, password) => {
 
   currentUser = user;
   userRecordReady = true;
+  await flushPendingVideos();
   return user;
 };
 
@@ -273,6 +317,7 @@ export {
   logEvent,
   onAuthReady,
   registerWithEmail,
+  saveGeneratedVideo,
   signInWithEmail,
   signOutUser,
   waitForAuth,

@@ -3,9 +3,10 @@ import {
   getIdToken,
   logEvent,
   onAuthReady,
+  saveGeneratedVideo,
   signOutUser,
   waitForAuth,
-} from "./firebase.js?v=20260118";
+} from "./firebase.js?v=20260119";
 
 const toggleGroups = document.querySelectorAll("[data-toggle-group]");
 const mainTabGroup = document.querySelector(
@@ -498,6 +499,17 @@ if (runButton) {
         videoPlayer.load();
       }
       addHistoryItem(outputUrl, elapsedSeconds);
+      await saveGeneratedVideo({
+        url: outputUrl,
+        prompt,
+        duration,
+        orientation,
+        remove_watermark: removeWatermark,
+        elapsed_seconds: Number(elapsedSeconds.toFixed(3)),
+        task_id: taskId,
+        record_id: recordId || null,
+        status: "success",
+      });
     } catch (error) {
       setGenerationStatus(error.message || "Generation failed.", "error");
       failProgress();
