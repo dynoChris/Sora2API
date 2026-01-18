@@ -102,6 +102,45 @@ const incrementEventCounter = async (uid) => {
   return result.snapshot.val();
 };
 
+const migrateEventKeys = async (uid) => {
+  const eventsRef = ref(db, `users/${uid}/events`);
+  const snapshot = await get(eventsRef);
+  if (!snapshot.exists()) {
+    return;
+  }
+
+  const events = snapshot.val();
+  const updates = {};
+  let maxNumeric = 0;
+
+  Object.entries(events).forEach(([key, value]) => {
+    const legacyMatch = key.match(/^event(\d+)$/);
+    if (legacyMatch) {
+      const numericKey = String(parseInt(legacyMatch[1], 10));
+      if (events[numericKey] == null) {
+        updates[`users/${uid}/events/${numericKey}`] = value;
+      }
+      updates[`users/${uid}/events/${key}`] = null;
+      maxNumeric = Math.max(maxNumeric, parseInt(numericKey, 10));
+      return;
+    }
+
+    if (/^\d+$/.test(key)) {
+      maxNumeric = Math.max(maxNumeric, parseInt(key, 10));
+    }
+  });
+
+  if (Object.keys(updates).length > 0) {
+    await update(ref(db), updates);
+  }
+
+  if (maxNumeric > 0) {
+    await runTransaction(ref(db, `users/${uid}/event_counter`), (current) =>
+      Math.max(current || 0, maxNumeric)
+    );
+  }
+};
+
 const writeEvent = async (uid, name, meta) => {
   const count = await incrementEventCounter(uid);
   const now = new Date();
@@ -111,7 +150,7 @@ const writeEvent = async (uid, name, meta) => {
     time_utc_plus_2: formatUtcPlus2(now),
     ...meta,
   };
-  await set(ref(db, `users/${uid}/events/event${count}`), payload);
+  await set(ref(db, `users/${uid}/events/${count}`), payload);
 };
 
 const flushPendingEvents = async () => {
@@ -148,6 +187,7 @@ const onAuthReady = (callback) => {
     userRecordReady = false;
     try {
       await ensureUserRecord(user);
+      await migrateEventKeys(user.uid);
       userRecordReady = true;
       await flushPendingEvents();
     } catch (error) {

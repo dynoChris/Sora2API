@@ -3,7 +3,7 @@ import {
   logEvent,
   onAuthReady,
   registerWithEmail,
-} from "./firebase.js";
+} from "./firebase.js?v=20250118";
 
 const form = document.querySelector("#register-form");
 const statusEl = document.querySelector("#register-status");
