@@ -13,7 +13,7 @@
       href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Sora:wght@400;500;600;700&family=Source+Code+Pro:wght@400;500&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="styles.css?v=20250123" />
+    <link rel="stylesheet" href="styles.css?v=20260118" />
   </head>
   <body>
     <div class="page">
@@ -258,6 +258,21 @@
                   <div class="generation-status" id="generation-status">
                     Ready to generate
                   </div>
+                  <div class="progress-panel" id="progress-panel" aria-live="polite">
+                    <div class="progress-top">
+                      <span>Estimated time left</span>
+                      <span class="progress-time" id="progress-time">4:30</span>
+                    </div>
+                    <div class="progress-track">
+                      <span class="progress-fill" id="progress-fill"></span>
+                    </div>
+                    <div class="progress-meta">
+                      <span class="progress-percent" id="progress-percent">0%</span>
+                      <span class="progress-note" id="progress-note"
+                        >Waiting for generation...</span
+                      >
+                    </div>
+                  </div>
 
                   <div class="video-shell has-video">
                     <video
@@ -456,6 +471,6 @@
       </div>
     </div>
 
-    <script type="module" src="app.js?v=20250123"></script>
+    <script type="module" src="app.js?v=20260118"></script>
   </body>
 </html>

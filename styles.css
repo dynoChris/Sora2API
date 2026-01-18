@@ -783,6 +783,63 @@ body::after {
   border-color: rgba(198, 58, 58, 0.35);
 }
 
+.progress-panel {
+  display: none;
+  flex-direction: column;
+  gap: 6px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: var(--surface-soft);
+}
+
+.progress-panel.active {
+  display: flex;
+}
+
+.progress-top,
+.progress-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.progress-note {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.progress-track {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--bg-strong);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.progress-fill {
+  display: block;
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #2b6df6, #78a8ff);
+  transition: width 0.3s ease;
+}
+
+.progress-panel.error {
+  border-color: rgba(198, 58, 58, 0.35);
+}
+
+.progress-panel.error .progress-fill {
+  background: #c63a3a;
+}
+
+.progress-panel.complete .progress-fill {
+  background: #1f7a3f;
+}
+
 .video-shell {
   position: relative;
   border-radius: 16px;

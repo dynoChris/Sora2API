@@ -5,7 +5,7 @@ import {
   onAuthReady,
   signOutUser,
   waitForAuth,
-} from "./firebase.js?v=20250123";
+} from "./firebase.js?v=20260118";
 
 const toggleGroups = document.querySelectorAll("[data-toggle-group]");
 const mainTabGroup = document.querySelector(
@@ -20,6 +20,11 @@ const videoPlayer = document.querySelector(".video-player");
 const durationGroup = document.querySelector('[data-setting="duration"]');
 const orientationGroup = document.querySelector('[data-setting="orientation"]');
 const generationStatus = document.querySelector("#generation-status");
+const progressPanel = document.querySelector("#progress-panel");
+const progressFill = document.querySelector("#progress-fill");
+const progressPercent = document.querySelector("#progress-percent");
+const progressTime = document.querySelector("#progress-time");
+const progressNote = document.querySelector("#progress-note");
 const historyList = document.querySelector("#video-history");
 const historyCount = document.querySelector("#history-count");
 const profileButton = document.querySelector("[data-profile-btn]");
@@ -68,6 +73,103 @@ const setGenerationStatus = (message, tone) => {
   if (tone) {
     generationStatus.classList.add(tone);
   }
+};
+
+let progressTimer = null;
+let progressStart = 0;
+let progressEstimate = 270;
+
+const formatTime = (seconds) => {
+  const total = Math.max(0, Math.round(seconds));
+  const minutes = Math.floor(total / 60);
+  const remainder = total % 60;
+  return `${minutes}:${String(remainder).padStart(2, "0")}`;
+};
+
+const setProgressValues = (percent, remainingSeconds, note) => {
+  if (!progressPanel) {
+    return;
+  }
+  if (progressFill) {
+    progressFill.style.width = `${percent}%`;
+  }
+  if (progressPercent) {
+    progressPercent.textContent = `${Math.round(percent)}%`;
+  }
+  if (progressTime) {
+    progressTime.textContent = formatTime(remainingSeconds);
+  }
+  if (progressNote) {
+    progressNote.textContent = note;
+  }
+};
+
+const updateProgress = () => {
+  const elapsed = (performance.now() - progressStart) / 1000;
+  const remaining = Math.max(0, progressEstimate - elapsed);
+  let percent = (elapsed / progressEstimate) * 100;
+  if (!Number.isFinite(percent) || percent < 0) {
+    percent = 0;
+  }
+  if (percent > 95) {
+    percent = 95;
+  }
+  const note = remaining > 0 ? "Generating..." : "Finalizing...";
+  setProgressValues(percent, remaining, note);
+};
+
+const startProgress = (estimateSeconds) => {
+  if (!progressPanel) {
+    return;
+  }
+  progressPanel.classList.add("active");
+  progressPanel.classList.remove("error", "complete");
+  progressEstimate = estimateSeconds;
+  progressStart = performance.now();
+  if (progressTimer) {
+    clearInterval(progressTimer);
+  }
+  updateProgress();
+  progressTimer = setInterval(updateProgress, 1000);
+};
+
+const finishProgress = () => {
+  if (!progressPanel) {
+    return;
+  }
+  if (progressTimer) {
+    clearInterval(progressTimer);
+    progressTimer = null;
+  }
+  progressPanel.classList.add("complete");
+  setProgressValues(100, 0, "Complete");
+};
+
+const failProgress = () => {
+  if (!progressPanel) {
+    return;
+  }
+  if (progressTimer) {
+    clearInterval(progressTimer);
+    progressTimer = null;
+  }
+  const elapsed = (performance.now() - progressStart) / 1000;
+  const percent = Math.min(95, (elapsed / progressEstimate) * 100 || 0);
+  progressPanel.classList.add("active");
+  progressPanel.classList.add("error");
+  setProgressValues(percent, 0, "Generation failed");
+};
+
+const resetProgress = () => {
+  if (!progressPanel) {
+    return;
+  }
+  if (progressTimer) {
+    clearInterval(progressTimer);
+    progressTimer = null;
+  }
+  progressPanel.classList.remove("active", "error", "complete");
+  setProgressValues(0, progressEstimate, "Waiting for generation...");
 };
 
 const updateHistoryCount = () => {
@@ -295,6 +397,7 @@ if (runButton) {
     const orientationLabel = getActiveSegmentValue(orientationGroup);
     const orientation = orientationLabel.toLowerCase() || "landscape";
     const removeWatermark = watermarkToggle ? watermarkToggle.checked : false;
+    const estimateSeconds = duration === 15 ? 300 : 270;
 
     const token = await getIdToken();
     if (!token) {
@@ -305,6 +408,7 @@ if (runButton) {
     generationInFlight = true;
     setRunButtonState(true);
     setGenerationStatus("Submitting generation request...", "running");
+    resetProgress();
     safeLogEvent("run_authenticated", {
       duration,
       orientation,
@@ -339,6 +443,7 @@ if (runButton) {
       }
 
       setGenerationStatus("Generating video...", "running");
+      startProgress(estimateSeconds);
 
       let outputUrl = "";
       for (let attempt = 0; attempt < 120; attempt += 1) {
@@ -363,11 +468,13 @@ if (runButton) {
         const status = (queryData.status || "").toLowerCase();
         outputUrl = queryData.outputUrl || outputUrl;
 
-        if (["succeeded", "completed", "success", "done"].includes(status)) {
-          break;
+        if (["success", "succeeded", "completed", "done"].includes(status)) {
+          if (outputUrl) {
+            break;
+          }
         }
 
-        if (["failed", "error", "canceled"].includes(status)) {
+        if (["failed", "error", "canceled", "cancelled", "fail"].includes(status)) {
           throw new Error("Generation failed");
         }
       }
@@ -381,6 +488,7 @@ if (runButton) {
         `Generated in ${elapsedSeconds.toFixed(3)} seconds`,
         null
       );
+      finishProgress();
       safeLogEvent("generation_complete", {
         elapsed_seconds: Number(elapsedSeconds.toFixed(3)),
       });
@@ -392,6 +500,7 @@ if (runButton) {
       addHistoryItem(outputUrl, elapsedSeconds);
     } catch (error) {
       setGenerationStatus(error.message || "Generation failed.", "error");
+      failProgress();
       safeLogEvent("generation_error", {
         message: error.message || "unknown",
       });
