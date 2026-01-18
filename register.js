@@ -4,7 +4,7 @@ import {
   onAuthReady,
   registerWithEmail,
   signInWithEmail,
-} from "./firebase.js?v=20250120";
+} from "./firebase.js?v=20250121";
 
 const form = document.querySelector("#auth-form");
 const statusEl = document.querySelector("#auth-status");
@@ -47,9 +47,7 @@ const redirectToPlayground = () => {
     return;
   }
   redirectScheduled = true;
-  setTimeout(() => {
-    window.location.href = "index.html";
-  }, 400);
+  window.location.replace("index.html");
 };
 
 const setDisabled = (disabled) => {

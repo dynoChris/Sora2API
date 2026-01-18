@@ -3,7 +3,7 @@ import {
   logEvent,
   onAuthReady,
   waitForAuth,
-} from "./firebase.js?v=20250120";
+} from "./firebase.js?v=20250121";
 
 const toggleGroups = document.querySelectorAll("[data-toggle-group]");
 const mainTabGroup = document.querySelector(
