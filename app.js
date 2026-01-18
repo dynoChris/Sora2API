@@ -7,7 +7,7 @@ import {
   saveGeneratedVideo,
   signOutUser,
   waitForAuth,
-} from "./firebase.js?v=20260121";
+} from "./firebase.js?v=20260122";
 
 const toggleGroups = document.querySelectorAll("[data-toggle-group]");
 const mainTabGroup = document.querySelector(
@@ -50,7 +50,7 @@ const DEMO_VIDEO = {
   url: "video_demo1.mp4",
   elapsed_seconds: 176.888,
   status: "complete",
-  label: "Generated video",
+  label: "First demo video",
   is_demo: true,
 };
 
@@ -346,7 +346,7 @@ const splitVideos = (videoMap) => {
         .map(([key, value]) => ({
           ...value,
           key: Number.parseInt(key, 10) || 0,
-          label: "Generated video",
+          label: value?.is_demo ? "First demo video" : "Generated video",
         }))
         .filter((item) => item.url)
     : [];
@@ -362,6 +362,7 @@ const splitVideos = (videoMap) => {
           ...DEMO_VIDEO,
           ...item,
           elapsed_seconds: item.elapsed_seconds || DEMO_VIDEO.elapsed_seconds,
+          label: DEMO_VIDEO.label,
           is_demo: true,
         };
       }
