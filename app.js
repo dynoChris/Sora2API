@@ -7,7 +7,7 @@ import {
   saveGeneratedVideo,
   signOutUser,
   waitForAuth,
-} from "./firebase.js?v=20260120";
+} from "./firebase.js?v=20260121";
 
 const toggleGroups = document.querySelectorAll("[data-toggle-group]");
 const mainTabGroup = document.querySelector(
@@ -54,7 +54,20 @@ const DEMO_VIDEO = {
   is_demo: true,
 };
 
-let currentVideoUrl = videoPlayer ? videoPlayer.getAttribute("src") || "" : "";
+const normalizeUrl = (url) => {
+  if (!url) {
+    return "";
+  }
+  try {
+    return new URL(url, window.location.href).href;
+  } catch (error) {
+    return url;
+  }
+};
+
+let currentVideoUrl = normalizeUrl(
+  videoPlayer ? videoPlayer.getAttribute("src") || "" : ""
+);
 let historyItems = [];
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -217,32 +230,37 @@ const downloadVideo = (url) => {
 };
 
 const setActiveVideo = (url) => {
-  if (!url) {
+  const normalized = normalizeUrl(url);
+  if (!normalized) {
     return;
   }
-  currentVideoUrl = url;
+  currentVideoUrl = normalized;
   if (videoPlayer) {
-    if (videoPlayer.src !== url) {
-      videoPlayer.src = url;
+    if (videoPlayer.src !== normalized) {
+      videoPlayer.src = normalized;
       videoPlayer.load();
     }
   }
   if (historyList) {
     historyList.querySelectorAll(".history-item").forEach((item) => {
-      item.classList.toggle("selected", item.dataset.videoUrl === url);
+      item.classList.toggle(
+        "selected",
+        item.dataset.videoUrl === normalized
+      );
     });
   }
 };
 
 const buildHistoryItem = (video) => {
+  const normalizedUrl = normalizeUrl(video.url);
   const item = document.createElement("div");
   item.className = "history-item";
-  item.dataset.videoUrl = video.url;
+  item.dataset.videoUrl = normalizedUrl;
 
   const thumb = document.createElement("div");
   thumb.className = "history-thumb";
   const thumbVideo = document.createElement("video");
-  thumbVideo.src = video.url;
+  thumbVideo.src = normalizedUrl;
   thumbVideo.controls = true;
   thumbVideo.preload = "metadata";
   thumb.appendChild(thumbVideo);
@@ -258,7 +276,13 @@ const buildHistoryItem = (video) => {
   meta.className = "history-meta";
 
   const time = document.createElement("span");
-  const elapsed = Number(video.elapsed_seconds);
+  const elapsed = Number(
+    Number.isFinite(Number(video.elapsed_seconds))
+      ? video.elapsed_seconds
+      : video.is_demo
+        ? DEMO_VIDEO.elapsed_seconds
+        : NaN
+  );
   time.textContent = Number.isFinite(elapsed)
     ? `Generated in ${elapsed.toFixed(3)} seconds`
     : "Generated video";
@@ -278,7 +302,7 @@ const buildHistoryItem = (video) => {
   const downloadBtn = document.createElement("button");
   downloadBtn.className = "icon-btn subtle history-download";
   downloadBtn.type = "button";
-  downloadBtn.dataset.downloadUrl = video.url;
+  downloadBtn.dataset.downloadUrl = normalizedUrl;
   downloadBtn.setAttribute("aria-label", "Download");
   downloadBtn.innerHTML = `<svg viewBox="0 0 24 24" class="icon">
     <path
@@ -316,24 +340,46 @@ const renderHistoryList = (items) => {
   setActiveVideo(activeUrl);
 };
 
-const normalizeVideos = (videoMap) => {
-  if (!videoMap) {
-    return [];
-  }
-  return Object.entries(videoMap)
-    .map(([key, value]) => ({
-      ...value,
-      key: Number.parseInt(key, 10) || 0,
-      label: "Generated video",
-    }))
-    .filter((item) => item.url)
-    .sort((a, b) => b.key - a.key);
+const splitVideos = (videoMap) => {
+  const items = videoMap
+    ? Object.entries(videoMap)
+        .map(([key, value]) => ({
+          ...value,
+          key: Number.parseInt(key, 10) || 0,
+          label: "Generated video",
+        }))
+        .filter((item) => item.url)
+    : [];
+
+  const regular = [];
+  let demoItem = null;
+
+  items.forEach((item) => {
+    const isDemo = normalizeUrl(item.url).includes(DEMO_VIDEO.url);
+    if (isDemo) {
+      if (!demoItem) {
+        demoItem = {
+          ...DEMO_VIDEO,
+          ...item,
+          elapsed_seconds: item.elapsed_seconds || DEMO_VIDEO.elapsed_seconds,
+          is_demo: true,
+        };
+      }
+      return;
+    }
+    regular.push(item);
+  });
+
+  regular.sort((a, b) => b.key - a.key);
+  return { regular, demoItem };
 };
 
 const loadHistory = async () => {
   const videos = await getUserVideos();
-  const normalized = normalizeVideos(videos);
-  historyItems = [DEMO_VIDEO, ...normalized];
+  const { regular, demoItem } = splitVideos(videos);
+  historyItems = demoItem
+    ? [...regular, demoItem]
+    : [...regular, DEMO_VIDEO];
   renderHistoryList(historyItems);
 };
 
@@ -607,14 +653,13 @@ if (runButton) {
         status: "complete",
         label: "Generated video",
       };
-      currentVideoUrl = outputUrl;
-      historyItems = [
-        DEMO_VIDEO,
-        newItem,
-        ...historyItems.filter(
-          (item) => !item.is_demo && item.url !== outputUrl
-        ),
-      ];
+      currentVideoUrl = normalizeUrl(outputUrl);
+      const existingDemo =
+        historyItems.find((item) => item.is_demo) || DEMO_VIDEO;
+      const existingRegular = historyItems.filter(
+        (item) => !item.is_demo && item.url !== outputUrl
+      );
+      historyItems = [newItem, ...existingRegular, existingDemo];
       renderHistoryList(historyItems);
       await saveGeneratedVideo({
         url: outputUrl,
