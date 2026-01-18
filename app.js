@@ -333,6 +333,7 @@ if (runButton) {
       }
 
       const taskId = createData.taskId;
+      const recordId = createData.recordId;
       if (!taskId) {
         throw new Error("Task ID missing from server response");
       }
@@ -342,8 +343,12 @@ if (runButton) {
       let outputUrl = "";
       for (let attempt = 0; attempt < 120; attempt += 1) {
         await sleep(5000);
+        const queryParams = new URLSearchParams({ taskId });
+        if (recordId) {
+          queryParams.set("recordId", recordId);
+        }
         const queryResponse = await fetch(
-          `${QUERY_ENDPOINT}?taskId=${encodeURIComponent(taskId)}`,
+          `${QUERY_ENDPOINT}?${queryParams.toString()}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
