@@ -6,6 +6,7 @@ import {
   onAuthStateChanged,
   signInAnonymously,
   signInWithEmailAndPassword,
+  signOut,
 } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-auth.js";
 import {
   getDatabase,
@@ -249,6 +250,12 @@ const signInWithEmail = async (email, password) => {
   return user;
 };
 
+const signOutUser = async () => {
+  await signOut(auth);
+  currentUser = null;
+  userRecordReady = false;
+};
+
 const getCurrentUser = () => currentUser;
 
 const waitForAuth = () => authReadyPromise;
@@ -259,5 +266,6 @@ export {
   onAuthReady,
   registerWithEmail,
   signInWithEmail,
+  signOutUser,
   waitForAuth,
 };

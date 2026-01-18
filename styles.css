@@ -332,6 +332,47 @@ body::after {
   height: 20px;
 }
 
+.profile-wrapper {
+  position: relative;
+}
+
+.profile-menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 10px);
+  min-width: 220px;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  display: none;
+  z-index: 5;
+}
+
+.profile-menu.open {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.profile-label {
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.profile-email {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  word-break: break-all;
+}
+
+.profile-signout {
+  justify-content: center;
+}
+
 .icon-btn.primary {
   background: var(--blue);
   border-color: var(--blue);

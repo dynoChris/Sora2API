@@ -2,8 +2,9 @@ import {
   getCurrentUser,
   logEvent,
   onAuthReady,
+  signOutUser,
   waitForAuth,
-} from "./firebase.js?v=20250121";
+} from "./firebase.js?v=20250122";
 
 const toggleGroups = document.querySelectorAll("[data-toggle-group]");
 const mainTabGroup = document.querySelector(
@@ -14,9 +15,49 @@ const runButton = document.querySelector('[data-action="run"]');
 const promptInput = document.querySelector("#prompt-input");
 const watermarkToggle = document.querySelector("#watermark-toggle");
 const videoPlayer = document.querySelector(".video-player");
+const profileButton = document.querySelector("[data-profile-btn]");
+const profileMenu = document.querySelector("[data-profile-menu]");
+const profileEmail = document.querySelector("[data-profile-email]");
+const profileSignout = document.querySelector("[data-profile-signout]");
 
 const safeLogEvent = (name, meta) => {
   logEvent(name, meta).catch(() => {});
+};
+
+let activeUser = null;
+
+const closeProfileMenu = () => {
+  if (profileMenu) {
+    profileMenu.classList.remove("open");
+  }
+  if (profileButton) {
+    profileButton.setAttribute("aria-expanded", "false");
+  }
+};
+
+const openProfileMenu = () => {
+  if (profileMenu) {
+    profileMenu.classList.add("open");
+  }
+  if (profileButton) {
+    profileButton.setAttribute("aria-expanded", "true");
+  }
+};
+
+const updateProfileUI = (user) => {
+  activeUser = user;
+  if (!profileMenu || !profileButton) {
+    return;
+  }
+
+  const isLoggedIn = user && !user.isAnonymous && user.email;
+  profileButton.dataset.loggedIn = isLoggedIn ? "true" : "false";
+  if (profileEmail) {
+    profileEmail.textContent = isLoggedIn ? user.email : "";
+  }
+  if (!isLoggedIn) {
+    closeProfileMenu();
+  }
 };
 
 const updatePanels = (group, value) => {
@@ -156,8 +197,52 @@ if (videoPlayer) {
   });
 }
 
+if (profileButton) {
+  profileButton.addEventListener("click", (event) => {
+    event.preventDefault();
+    const user = activeUser;
+    if (!user || user.isAnonymous) {
+      safeLogEvent("profile_redirect_register");
+      window.location.href = "register.html";
+      return;
+    }
+
+    if (profileMenu && profileMenu.classList.contains("open")) {
+      closeProfileMenu();
+      return;
+    }
+    safeLogEvent("profile_open");
+    openProfileMenu();
+  });
+}
+
+if (profileSignout) {
+  profileSignout.addEventListener("click", async (event) => {
+    event.preventDefault();
+    safeLogEvent("sign_out");
+    try {
+      await signOutUser();
+    } catch (error) {
+      // Ignore sign-out errors to avoid trapping the user.
+    }
+    closeProfileMenu();
+    window.location.href = "register.html";
+  });
+}
+
+document.addEventListener("click", (event) => {
+  if (!profileMenu || !profileButton) {
+    return;
+  }
+  const isInside = event.target.closest(".profile-wrapper");
+  if (!isInside && profileMenu.classList.contains("open")) {
+    closeProfileMenu();
+  }
+});
+
 let pageViewLogged = false;
 onAuthReady((user) => {
+  updateProfileUI(user);
   if (!pageViewLogged) {
     safeLogEvent("page_view", { page: "playground", status: user.isAnonymous });
     pageViewLogged = true;

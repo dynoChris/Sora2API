@@ -13,7 +13,7 @@
       href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Sora:wght@400;500;600;700&family=Source+Code+Pro:wght@400;500&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="styles.css?v=20250121" />
+    <link rel="stylesheet" href="styles.css?v=20250122" />
   </head>
   <body>
     <div class="page">
@@ -49,19 +49,23 @@
             </svg>
             Run with API
           </button>
-          <a
-            class="icon-btn profile-btn"
-            href="register.html"
-            aria-label="Profile"
-            data-event="profile_click"
-          >
-            <svg viewBox="0 0 24 24" class="icon">
-              <path
-                d="M12 12.5a4 4 0 1 0-4-4 4 4 0 0 0 4 4zm0 2c-3.3 0-6 1.7-6 3.8v.7h12v-.7c0-2.1-2.7-3.8-6-3.8z"
-                fill="currentColor"
-              />
-            </svg>
-          </a>
+          <div class="profile-wrapper">
+            <button class="icon-btn profile-btn" data-profile-btn aria-label="Profile">
+              <svg viewBox="0 0 24 24" class="icon">
+                <path
+                  d="M12 12.5a4 4 0 1 0-4-4 4 4 0 0 0 4 4zm0 2c-3.3 0-6 1.7-6 3.8v.7h12v-.7c0-2.1-2.7-3.8-6-3.8z"
+                  fill="currentColor"
+                />
+              </svg>
+            </button>
+            <div class="profile-menu" data-profile-menu>
+              <div class="profile-label">Signed in as</div>
+              <div class="profile-email" data-profile-email></div>
+              <button class="btn ghost profile-signout" data-profile-signout>
+                Sign Out
+              </button>
+            </div>
+          </div>
         </div>
       </header>
 
@@ -470,6 +474,6 @@
       </div>
     </div>
 
-    <script type="module" src="app.js?v=20250121"></script>
+    <script type="module" src="app.js?v=20250122"></script>
   </body>
 </html>
