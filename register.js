@@ -4,7 +4,7 @@ import {
   onAuthReady,
   registerWithEmail,
   signInWithEmail,
-} from "./firebase.js?v=20250122";
+} from "./firebase.js?v=20250123";
 
 const form = document.querySelector("#auth-form");
 const statusEl = document.querySelector("#auth-status");

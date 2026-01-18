@@ -258,10 +258,18 @@ const signOutUser = async () => {
 
 const getCurrentUser = () => currentUser;
 
+const getIdToken = async () => {
+  if (!currentUser) {
+    return null;
+  }
+  return currentUser.getIdToken();
+};
+
 const waitForAuth = () => authReadyPromise;
 
 export {
   getCurrentUser,
+  getIdToken,
   logEvent,
   onAuthReady,
   registerWithEmail,

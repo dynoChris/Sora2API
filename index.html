@@ -13,7 +13,7 @@
       href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Sora:wght@400;500;600;700&family=Source+Code+Pro:wght@400;500&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="styles.css?v=20250122" />
+    <link rel="stylesheet" href="styles.css?v=20250123" />
   </head>
   <body>
     <div class="page">
@@ -156,7 +156,7 @@
                 >
                   <div class="field">
                     <label>prompt <span class="req">*</span></label>
-                    <textarea id="prompt-input">A professor stands at the front of a lively classroom, enthusiastically giving a lecture. On the blackboard behind him are colorful chalk diagrams. With an animated gesture, he declares to the students: "Sora 2 is now available on Kie AI, making it easier than ever to create stunning videos." The students listen attentively, some smiling and taking notes.</textarea>
+                    <textarea id="prompt-input">A professor stands at the front of a lively classroom, enthusiastically giving a lecture. On the blackboard behind him are colorful chalk diagrams. With an animated gesture, he declares to the students: "Sora 2 is now available on YOUR_MARKETPLACE, making it easier than ever to create stunning videos." The students listen attentively, some smiling and taking notes.</textarea>
                     <p class="help">
                       The text prompt describing the desired video motion
                     </p>
@@ -195,37 +195,6 @@
                     </div>
                   </div>
 
-                  <div class="field">
-                    <div class="field-label-row">
-                      <label>character_id_list</label>
-                      <span class="count">1/5</span>
-                    </div>
-                    <div class="character-card">
-                      <div class="character-header">
-                        <span>Character 1</span>
-                        <button
-                          class="icon-btn subtle"
-                          aria-label="Remove character"
-                        >
-                          <svg viewBox="0 0 24 24" class="icon">
-                            <path
-                              d="M6 6l12 12M18 6l-12 12"
-                              stroke="currentColor"
-                              stroke-width="1.6"
-                              stroke-linecap="round"
-                            />
-                          </svg>
-                        </button>
-                      </div>
-                      <input
-                        type="text"
-                        placeholder="Enter character_id list..."
-                        disabled
-                      />
-                      <p class="help">Characters are coming soon.</p>
-                    </div>
-                  </div>
-
                   <div class="form-actions">
                     <button class="btn ghost" data-event="reset_click">
                       Reset
@@ -241,7 +210,7 @@
                           fill="currentColor"
                         />
                       </svg>
-                      30 Run
+                      <span class="run-text">30 Run</span>
                     </a>
                   </div>
                 </div>
@@ -285,6 +254,9 @@
                   <div class="output-type">
                     <span>output type</span>
                     <span class="pill small">video</span>
+                  </div>
+                  <div class="generation-status" id="generation-status">
+                    Ready to generate
                   </div>
 
                   <div class="video-shell has-video">
@@ -335,6 +307,16 @@
                       </svg>
                       View full history
                     </button>
+                  </div>
+
+                  <div class="history-panel">
+                    <div class="history-header">
+                      <span>Generated videos</span>
+                      <span class="history-count" id="history-count">0</span>
+                    </div>
+                    <div class="history-list" id="video-history">
+                      <div class="history-empty">No videos yet.</div>
+                    </div>
                   </div>
                 </div>
 
@@ -474,6 +456,6 @@
       </div>
     </div>
 
-    <script type="module" src="app.js?v=20250122"></script>
+    <script type="module" src="app.js?v=20250123"></script>
   </body>
 </html>
