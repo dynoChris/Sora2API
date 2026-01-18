@@ -7,7 +7,7 @@ import {
   saveGeneratedVideo,
   signOutUser,
   waitForAuth,
-} from "./firebase.js?v=20260122";
+} from "./firebase.js?v=20260123";
 
 const toggleGroups = document.querySelectorAll("[data-toggle-group]");
 const mainTabGroup = document.querySelector(
@@ -274,18 +274,19 @@ const buildHistoryItem = (video) => {
 
   const meta = document.createElement("div");
   meta.className = "history-meta";
+  const isDemo = Boolean(video.is_demo);
+  if (isDemo) {
+    meta.classList.add("demo");
+  }
 
-  const time = document.createElement("span");
-  const elapsed = Number(
-    Number.isFinite(Number(video.elapsed_seconds))
-      ? video.elapsed_seconds
-      : video.is_demo
-        ? DEMO_VIDEO.elapsed_seconds
-        : NaN
-  );
-  time.textContent = Number.isFinite(elapsed)
-    ? `Generated in ${elapsed.toFixed(3)} seconds`
-    : "Generated video";
+  if (!isDemo) {
+    const time = document.createElement("span");
+    const elapsed = Number(video.elapsed_seconds);
+    time.textContent = Number.isFinite(elapsed)
+      ? `Generated in ${elapsed.toFixed(3)} seconds`
+      : "Generated video";
+    meta.appendChild(time);
+  }
 
   const metaRight = document.createElement("span");
   metaRight.className = "history-meta-right";
@@ -315,7 +316,6 @@ const buildHistoryItem = (video) => {
     />
   </svg>`;
 
-  meta.appendChild(time);
   metaRight.appendChild(status);
   metaRight.appendChild(downloadBtn);
   meta.appendChild(metaRight);

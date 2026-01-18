@@ -1060,6 +1060,10 @@ body::after {
   flex-wrap: wrap;
 }
 
+.history-meta.demo {
+  justify-content: flex-end;
+}
+
 .history-meta-right {
   display: inline-flex;
   align-items: center;
